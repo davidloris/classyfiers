@@ -16,14 +16,14 @@ data = pd.read_csv('train.csv')[["Gender","Eye color","Race","Hair color","Heigh
 
 # Method that is used to clean the data of our Dataset
 
-def clear_data(data):
+def clean_data(data):
     
     # With this command we transform all True False values to 0 or 1
-    data = data*1
+    data = data * 1
     
     # Delete the Nan fields in the "Gender" column
-    y= data['Gender'].map({'Female': 0, 'Male': 1,np.nan:0.5})
-    #y= data['Gender'].map({'Female': 0, 'Male': 1,data["Gender"].mean()})
+    data['Gender'].map({'Female': 0, 'Male': 1})
+    data['Gender'].fillna(data['Gender'].mean())
     
     # I put to Nan all the negative values of height and weight. Then I replace the value
     # Nan with the media
@@ -34,9 +34,8 @@ def clear_data(data):
     data["Weight"].fillna(data["Weight"].mean(), inplace=True)
     
     #Errors in the names of various colors are corrected
-    data["Eye color"] = np.where(data["Eye color"] == 'bown',"brown",data["Eye color"])
-    data["Hair color"] = np.where(data["Hair color"] == 'black',"Black",data["Hair color"])
-    
+    data["Eye color"] = np.where(data["Eye color"] == 'bown', "brown", data["Eye color"])
+    data["Hair color"] = np.where(data["Hair color"] == 'black', "Black", data["Hair color"])
     return data
 
 
@@ -68,7 +67,7 @@ def split_columns(name_column):
     return data
 
 #I clean our Dataset with the method previously created
-data = clear_data(data)
+data = clean_data(data)
 
 #I take all the columns with the values ​​to Nan
 missing_values_index = missing_values_count[np.where(missing_values_count > 0, True, False)].index
