@@ -15,7 +15,7 @@ from sklearn.linear_model import LogisticRegression
 def generate_distribution(data):
     return np.random.normal(data.mean(), data.std()) # Not sure normal is the best dist., we should check.
 
-def clean_data(data):
+def clean_data(data, **kwargs):
     data = data * 1 # With this command we transform all True False values to 0 or 1
     data.loc[:, 'Gender'] = data['Gender'].map({'Female': 0, 'Male': 1})
     data['Gender'].fillna(generate_distribution(data['Gender']), inplace=True)
@@ -25,23 +25,28 @@ def clean_data(data):
     data["Weight"].fillna(generate_distribution(data['Weight']), inplace=True)
     data.loc[:, 'Eye color'] = data["Eye color"].map(eye_color_dic)
     data.loc[:, 'Eye color'] = data.loc[:, 'Eye color'] + '_eye'
-    data = transform_categorical(data, 'Eye color')
+    data = transform_categorical(data, 'Eye color', kwargs['categorical_handler'])
     data.loc[:, 'Hair color'] = data["Hair color"].map(hair_color_dic)
     data.loc[:, 'Hair color'] = data.loc[:, 'Hair color'] + '_hair'
-    data = transform_categorical(data, 'Hair color')
+    data = transform_categorical(data, 'Hair color', kwargs['categorical_handler'])
     data.loc[:, 'Race'] = data['Race'].map(race_dic)
-    data = transform_categorical(data, 'Race')
-    data = transform_categorical(data, 'Publisher')
+    data = transform_categorical(data, 'Race', kwargs['categorical_handler'])
+    data = transform_categorical(data, 'Publisher', kwargs['categorical_handler'])
     data.loc[:, 'Skin color'] = data['Skin color'].map(skin_dic)
     data.loc[:, 'Skin color'] = data.loc[:, 'Skin color'] + '_skin'
-    data = transform_categorical(data, 'Skin color')
+    data = transform_categorical(data, 'Skin color', kwargs['categorical_handler'])
     return data
 
-def transform_categorical(data, column_name):
-    return pd.concat([data, pd.get_dummies(data[column_name])],
-                     axis=1).drop(columns=[column_name])
+def transform_categorical(data, column_name, method):
+    if method == 'dummies':
+        return pd.concat([data, pd.get_dummies(data[column_name])],
+                          axis=1).drop(columns=[column_name])
+    elif method == 'hashing':
+        raise BaseException('Needs implementation.') # Pablo is going to implement this.
+    else:
+        raise BaseException('Choose a method to handle categorical data.')
 
-def prepare_data(data, test_size = 0.2):
+def prepare_data(data, test_size):
     y = data["Alignment"]
     X = data.drop(columns=['Alignment'])
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
@@ -54,12 +59,12 @@ def compute_accuracy(method, X_train, X_test, y_train, y_test):
     yhat = method.predict(X_test)
     return metrics.accuracy_score(y_test,yhat)
 
-def run():
+def run(**kwargs):
     data = pd.read_csv('train.csv')[chosen_columns]
     test_data = pd.read_csv('test.csv')[chosen_columns[1:]] #Dropping 'Alignment' column.
-    cleaned_data = clean_data(data)
-    cleaned_test_data = clean_data(test_data)
-    X_train, X_test, y_train, y_test = prepare_data(cleaned_data)
+    cleaned_data = clean_data(data, **kwargs)
+    cleaned_test_data = clean_data(test_data, **kwargs)
+    X_train, X_test, y_train, y_test = prepare_data(cleaned_data, kwargs['test_size'])
     max_acc = 0.0
     for name, method in methods.items():
         acc = compute_accuracy(method, X_train, X_test, y_train, y_test)
@@ -159,5 +164,12 @@ race_dic = {
     'Zombie': 'Bad'
 }
 
+## Parameters
+
+kwargs = {
+    'test_size': 0.2,
+    'categorical_handler': 'dummies'
+}
+
 ## Runner
-run()
+run(**kwargs)
