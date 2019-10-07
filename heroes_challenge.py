@@ -148,6 +148,7 @@ def transform_categorical(data, column_name, method):
         raise BaseException('Choose a method to handle categorical data.')
 
 def generate_distribution(data):
+    np.random.seed(42)
     return np.random.normal(data.mean(), data.std()) # Not sure normal is the best dist., we should check.
 
 def clean_data(data, **kwargs):
@@ -186,4 +187,5 @@ parameters = {
 }
 
 # RUNNER
+
 run(**parameters)
