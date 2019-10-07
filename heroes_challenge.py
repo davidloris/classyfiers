@@ -12,39 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 
-def generate_distribution(data):
-    return np.random.normal(data.mean(), data.std()) # Not sure normal is the best dist., we should check.
-
-def clean_data(data, **kwargs):
-    data = data * 1 # With this command we transform all True False values to 0 or 1
-    data.loc[:, 'Gender'] = data['Gender'].map({'Female': 0, 'Male': 1})
-    data['Gender'].fillna(generate_distribution(data['Gender']), inplace=True)
-    data.loc[data["Height"] < 0, 'Height'] = np.nan
-    data["Height"].fillna(generate_distribution(data["Height"]), inplace=True)
-    data.loc[data["Weight"] < 0, 'Weight'] = np.nan
-    data["Weight"].fillna(generate_distribution(data['Weight']), inplace=True)
-    data.loc[:, 'Eye color'] = data["Eye color"].map(eye_color_dic)
-    data.loc[:, 'Eye color'] = data.loc[:, 'Eye color'] + '_eye'
-    data = transform_categorical(data, 'Eye color', kwargs['categorical_handler'])
-    data.loc[:, 'Hair color'] = data["Hair color"].map(hair_color_dic)
-    data.loc[:, 'Hair color'] = data.loc[:, 'Hair color'] + '_hair'
-    data = transform_categorical(data, 'Hair color', kwargs['categorical_handler'])
-    data.loc[:, 'Race'] = data['Race'].map(race_dic)
-    data = transform_categorical(data, 'Race', kwargs['categorical_handler'])
-    data = transform_categorical(data, 'Publisher', kwargs['categorical_handler'])
-    data.loc[:, 'Skin color'] = data['Skin color'].map(skin_dic)
-    data.loc[:, 'Skin color'] = data.loc[:, 'Skin color'] + '_skin'
-    data = transform_categorical(data, 'Skin color', kwargs['categorical_handler'])
-    return data
-
-def transform_categorical(data, column_name, method):
-    if method == 'dummies':
-        return pd.concat([data, pd.get_dummies(data[column_name])],
-                          axis=1).drop(columns=[column_name])
-    elif method == 'hashing':
-        raise BaseException('Needs implementation.') # Pablo is going to implement this.
-    else:
-        raise BaseException('Choose a method to handle categorical data.')
+# CORE OF THE PROGRAM
 
 def prepare_data(data, test_size):
     y = data["Alignment"]
@@ -76,6 +44,8 @@ def run(**kwargs):
     print('RESULT:')
     print('The {} is the model with best accuracy, acc = {}.'.format(best_model, max_acc))
 
+# METHODS
+
 methods = {
     'SVC with C = 10': svm.SVC(C = 10.0, gamma = 1e-5, random_state = 42),
     'SVC with C = 100': svm.SVC(C=100.0,gamma = 1e-5,random_state=42),
@@ -89,6 +59,8 @@ methods = {
     'RandomForest': RandomForestClassifier(n_estimators=100, random_state=3),
     'LogisticRegression': LogisticRegression(),
 }
+
+# HUMAN MANIPULATIONS - TECHNICAL INFO
 
 chosen_columns = ["Alignment", "Gender", "Eye color", "Race", "Hair color",
                   "Publisher", "Skin color", "Height", "Weight", "Agility",
@@ -164,6 +136,42 @@ race_dic = {
     'Zombie': 'Bad'
 }
 
+# FUNCTIONS TO CLEAN DATA
+
+def transform_categorical(data, column_name, method):
+    if method == 'dummies':
+        return pd.concat([data, pd.get_dummies(data[column_name])],
+                          axis=1).drop(columns=[column_name])
+    elif method == 'hashing':
+        raise BaseException('Needs implementation.') # Pablo is going to implement this.
+    else:
+        raise BaseException('Choose a method to handle categorical data.')
+
+def generate_distribution(data):
+    return np.random.normal(data.mean(), data.std()) # Not sure normal is the best dist., we should check.
+
+def clean_data(data, **kwargs):
+    data = data * 1 # With this command we transform all True False values to 0 or 1
+    data.loc[:, 'Gender'] = data['Gender'].map({'Female': 0, 'Male': 1})
+    data['Gender'].fillna(generate_distribution(data['Gender']), inplace=True)
+    data.loc[data["Height"] < 0, 'Height'] = np.nan
+    data["Height"].fillna(generate_distribution(data["Height"]), inplace=True)
+    data.loc[data["Weight"] < 0, 'Weight'] = np.nan
+    data["Weight"].fillna(generate_distribution(data['Weight']), inplace=True)
+    data.loc[:, 'Eye color'] = data["Eye color"].map(eye_color_dic)
+    data.loc[:, 'Eye color'] = data.loc[:, 'Eye color'] + '_eye'
+    data = transform_categorical(data, 'Eye color', kwargs['categorical_handler'])
+    data.loc[:, 'Hair color'] = data["Hair color"].map(hair_color_dic)
+    data.loc[:, 'Hair color'] = data.loc[:, 'Hair color'] + '_hair'
+    data = transform_categorical(data, 'Hair color', kwargs['categorical_handler'])
+    data.loc[:, 'Race'] = data['Race'].map(race_dic)
+    data = transform_categorical(data, 'Race', kwargs['categorical_handler'])
+    data = transform_categorical(data, 'Publisher', kwargs['categorical_handler'])
+    data.loc[:, 'Skin color'] = data['Skin color'].map(skin_dic)
+    data.loc[:, 'Skin color'] = data.loc[:, 'Skin color'] + '_skin'
+    data = transform_categorical(data, 'Skin color', kwargs['categorical_handler'])
+    return data
+
 ## Parameters
 
 kwargs = {
@@ -171,5 +179,5 @@ kwargs = {
     'categorical_handler': 'dummies'
 }
 
-## Runner
+# RUNNER
 run(**kwargs)
