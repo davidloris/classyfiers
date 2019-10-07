@@ -34,7 +34,7 @@ def run(**kwargs):
     cleaned_test_data = clean_data(test_data, **kwargs)
     X_train, X_test, y_train, y_test = prepare_data(cleaned_data, kwargs['test_size'])
     max_acc = 0.0
-    for name, method in methods.items():
+    for name, method in kwargs['methods'].items():
         acc = compute_accuracy(method, X_train, X_test, y_train, y_test)
         print('The accuracy for {} is {}.'.format(name, acc))
         if acc > max_acc:
@@ -175,6 +175,7 @@ def clean_data(data, **kwargs):
 ## Parameters
 
 kwargs = {
+    'methods': methods,
     'columns': chosen_columns,
     'test_size': 0.2,
     'categorical_handler': 'dummies',
