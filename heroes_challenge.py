@@ -174,7 +174,7 @@ def clean_data(data, **kwargs):
 
 ## Parameters
 
-kwargs = {
+parameters = {
     'methods': methods,
     'columns': chosen_columns,
     'test_size': 0.2,
@@ -186,4 +186,4 @@ kwargs = {
 }
 
 # RUNNER
-run(**kwargs)
+run(**parameters)
