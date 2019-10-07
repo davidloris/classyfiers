@@ -158,16 +158,16 @@ def clean_data(data, **kwargs):
     data["Height"].fillna(generate_distribution(data["Height"]), inplace=True)
     data.loc[data["Weight"] < 0, 'Weight'] = np.nan
     data["Weight"].fillna(generate_distribution(data['Weight']), inplace=True)
-    data.loc[:, 'Eye color'] = data["Eye color"].map(eye_color_dic)
+    data.loc[:, 'Eye color'] = data["Eye color"].map(kwargs['eyes_map'])
     data.loc[:, 'Eye color'] = data.loc[:, 'Eye color'] + '_eye'
     data = transform_categorical(data, 'Eye color', kwargs['categorical_handler'])
-    data.loc[:, 'Hair color'] = data["Hair color"].map(hair_color_dic)
+    data.loc[:, 'Hair color'] = data["Hair color"].map(kwargs['hairs_map'])
     data.loc[:, 'Hair color'] = data.loc[:, 'Hair color'] + '_hair'
     data = transform_categorical(data, 'Hair color', kwargs['categorical_handler'])
-    data.loc[:, 'Race'] = data['Race'].map(race_dic)
+    data.loc[:, 'Race'] = data['Race'].map(kwargs['races_map'])
     data = transform_categorical(data, 'Race', kwargs['categorical_handler'])
     data = transform_categorical(data, 'Publisher', kwargs['categorical_handler'])
-    data.loc[:, 'Skin color'] = data['Skin color'].map(skin_dic)
+    data.loc[:, 'Skin color'] = data['Skin color'].map(kwargs['skins_map'])
     data.loc[:, 'Skin color'] = data.loc[:, 'Skin color'] + '_skin'
     data = transform_categorical(data, 'Skin color', kwargs['categorical_handler'])
     return data
@@ -175,8 +175,13 @@ def clean_data(data, **kwargs):
 ## Parameters
 
 kwargs = {
+    'columns': chosen_columns,
     'test_size': 0.2,
-    'categorical_handler': 'dummies'
+    'categorical_handler': 'dummies',
+    'eyes_map': eye_color_dic,
+    'hairs_map': hair_color_dic,
+    'races_map': race_dic,
+    'skins_map': skin_dic,
 }
 
 # RUNNER
