@@ -1,13 +1,11 @@
 import pandas as pd
 import numpy as np
+
 from sklearn.model_selection import train_test_split
-from sklearn import svm,ensemble, tree, neighbors
-from sklearn import metrics
+from sklearn import svm,ensemble, tree, neighbors, metrics
 from sklearn.preprocessing import StandardScaler
 from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import accuracy_score
 from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
@@ -22,7 +20,8 @@ def prepare_data(data, test_size):
     X_test_scaled = StandardScaler().fit_transform(X_test)
     return X_train_scaled, X_test_scaled, y_train, y_test
 
-def compute_accuracy(method, X_train, X_test, y_train, y_test):
+def compute_accuracy(method, method_kwargs, X_train, X_test, y_train, y_test):
+    method = method(**method_kwargs)
     method.fit(X_train, y_train) 
     yhat = method.predict(X_test)
     return metrics.accuracy_score(y_test,yhat)
@@ -35,7 +34,16 @@ def run(**kwargs):
     X_train, X_test, y_train, y_test = prepare_data(cleaned_data, kwargs['test_size'])
     max_acc = 0.0
     for name, method in kwargs['methods'].items():
-        acc = compute_accuracy(method, X_train, X_test, y_train, y_test)
+        method_kwargs = kwargs['methods_kwargs'][name]
+        if 'random_state' in method_kwargs:
+            random_iterator = np.arange(0, kwargs['n_iters'], 1)
+        else:
+            random_iterator = [None]
+        N = len(random_iterator)
+        acc = 0.0
+        for random_seed in random_iterator:
+            methods_kwargs.update({'random_state': random_seed})
+            acc += compute_accuracy(method, method_kwargs, X_train, X_test, y_train, y_test) / N
         print('The accuracy for {} is {}.'.format(name, acc))
         if acc > max_acc:
             max_acc = acc
@@ -47,17 +55,31 @@ def run(**kwargs):
 # METHODS
 
 methods = {
-    'SVC with C = 10': svm.SVC(C = 10.0, gamma = 1e-5, random_state = 42),
-    'SVC with C = 100': svm.SVC(C=100.0,gamma = 1e-5,random_state=42),
-    'SVC with C = 1000': svm.SVC(C=1000.0,gamma = 1e-6,random_state=42),
-    'GradientBoosting': ensemble.GradientBoostingClassifier(random_state=42),
-    'DecisionTree': tree.DecisionTreeClassifier(),
-    'KNeighbors with n = 2': neighbors.KNeighborsClassifier(n_neighbors=2),
-    'NNeighbors with n = 7': neighbors.KNeighborsClassifier(n_neighbors=7),
-    'Gaussian Naive-Bayes': GaussianNB(),
-    'LinearSVC': LinearSVC(random_state=42),
-    'RandomForest': RandomForestClassifier(n_estimators=100, random_state=3),
-    'LogisticRegression': LogisticRegression(),
+    'SVC with C = 10': svm.SVC,
+    'SVC with C = 100': svm.SVC,
+    'SVC with C = 1000': svm.SVC,
+    'GradientBoosting': ensemble.GradientBoostingClassifier,
+    'DecisionTree': tree.DecisionTreeClassifier,
+    'KNeighbors with n = 2': neighbors.KNeighborsClassifier,
+    'NNeighbors with n = 7': neighbors.KNeighborsClassifier,
+    'Gaussian Naive-Bayes': GaussianNB,
+    'LinearSVC': LinearSVC,
+    'RandomForest': RandomForestClassifier,
+    'LogisticRegression': LogisticRegression,
+}
+
+methods_kwargs = {
+    'SVC with C = 10': {'C': 10.0, 'gamma': 1e-5, 'random_state': None},
+    'SVC with C = 100': {'C': 100.0, 'gamma': 1e-5, 'random_state': None},
+    'SVC with C = 1000': {'C': 1000.0, 'gamma': 1e-5, 'random_state': None},
+    'GradientBoosting': {'random_state': None},
+    'DecisionTree': {},
+    'KNeighbors with n = 2': {'n_neighbors': 2},
+    'NNeighbors with n = 7': {'n_neighbors': 7},
+    'Gaussian Naive-Bayes': {},
+    'LinearSVC': {'random_state': None},
+    'RandomForest': {'n_estimators': 100, 'random_state': None},
+    'LogisticRegression': {},
 }
 
 # HUMAN MANIPULATIONS - TECHNICAL INFO
@@ -177,8 +199,10 @@ def clean_data(data, **kwargs):
 
 parameters = {
     'methods': methods,
+    'methods_kwargs': methods_kwargs,
     'columns': chosen_columns,
     'test_size': 0.2,
+    'n_iters': 1, 
     'categorical_handler': 'dummies',
     'eyes_map': eye_color_dic,
     'hairs_map': hair_color_dic,
