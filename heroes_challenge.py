@@ -202,7 +202,7 @@ parameters = {
     'methods_kwargs': methods_kwargs,
     'columns': chosen_columns,
     'test_size': 0.2,
-    'n_iters': 1, 
+    'n_iters': 100, 
     'categorical_handler': 'dummies',
     'eyes_map': eye_color_dic,
     'hairs_map': hair_color_dic,
