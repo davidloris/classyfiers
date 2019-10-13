@@ -85,7 +85,10 @@ methods_kwargs = {
 # HUMAN MANIPULATIONS - TECHNICAL INFO
 
 chosen_columns = ["Alignment", "Gender", "Eye color", "Race", "Hair color",
-                  "Publisher", "Skin color", "Height", "Weight", "Agility",
+                  "Publisher", "Skin color", "Height", "Weight",
+                #   'Agility', 'Accelerated Healing', 'Durability', 'Flight',
+                #   'Intelligence', 'Super Strength', 'Energy Blasts', 'Stamina',
+                #   'Super Speed', 'Reflexes', 'Empathy', ]
                   "Accelerated Healing", "Lantern Power Ring",
                   "Dimensional Awareness", "Cold Resistance", "Durability",
                   "Stealth", "Energy Absorption", "Flight", "Danger Sense"]
@@ -160,17 +163,28 @@ race_dic = {
 
 # FUNCTIONS TO CLEAN DATA
 
+def StringHash(a, m=257, C=1024):  # m=257, C=1024
+# m represents the estimated cardinality of the items set
+# C represents a number that is larger that ord(c)
+    hash=0
+    for i in range(len(a)):
+        hash = (hash * C + ord(a[i])) % m
+    return hash
+
 def transform_categorical(data, column_name, method):
     if method == 'dummies':
         return pd.concat([data, pd.get_dummies(data[column_name])],
                           axis=1).drop(columns=[column_name])
     elif method == 'hashing':
-        raise BaseException('Needs implementation.') # Pablo is going to implement this.
+        data[column_name] = data[column_name].replace(np.nan, 'NaN')
+        data[column_name] = data[column_name].apply(lambda x: StringHash(x))
+        data[column_name] = data[column_name].replace(StringHash('NaN'), np.nan)
+        data[column_name] = generate_distribution(data[column_name])
+        return data
     else:
         raise BaseException('Choose a method to handle categorical data.')
 
 def generate_distribution(data):
-    np.random.seed(42)
     return np.random.normal(data.mean(), data.std()) # Not sure normal is the best dist., we should check.
 
 def clean_data(data, **kwargs):
@@ -211,5 +225,5 @@ parameters = {
 }
 
 # RUNNER
-
+np.random.seed(42)
 run(**parameters)
