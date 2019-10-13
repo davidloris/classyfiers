@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn import svm,ensemble, tree, neighbors, metrics
 from sklearn.preprocessing import StandardScaler
 from sklearn.naive_bayes import GaussianNB
@@ -26,9 +26,16 @@ def compute_accuracy(method, method_kwargs, X_train, X_test, y_train, y_test):
     yhat = method.predict(X_test)
     return metrics.accuracy_score(y_test,yhat)
 
+def acc_cross_validate(method, data, n_groups):
+    return cross_validate(method, data.drop(columns=['Alignment']),
+                          data['Alignment'], cv=n_groups)['test_score']
+
+def outliers(data, column, max_val, min_val):
+    return data[(data[column] < max_val) & (data[column] > min_val)][column]
+
 def run(**kwargs):
-    data = pd.read_csv('train.csv')[chosen_columns]
-    test_data = pd.read_csv('test.csv')[chosen_columns[1:]] #Dropping 'Alignment' column.
+    data = pd.read_csv('train.csv')[kwargs['columns']]
+    test_data = pd.read_csv('test.csv')[kwargs['columns'][1:]] #Dropping 'Alignment' column.
     cleaned_data = clean_data(data, **kwargs)
     cleaned_test_data = clean_data(test_data, **kwargs)
     X_train, X_test, y_train, y_test = prepare_data(cleaned_data, kwargs['test_size'])
@@ -43,7 +50,7 @@ def run(**kwargs):
         acc = 0.0
         for random_seed in random_iterator:
             methods_kwargs.update({'random_state': random_seed})
-            acc += compute_accuracy(method, method_kwargs, X_train, X_test, y_train, y_test) / N
+            acc += np.mean(acc_cross_validate(method(**method_kwargs), cleaned_data, kwargs['n_groups'])) / N
         print('The accuracy for {} is {}.'.format(name, acc))
         if acc > max_acc:
             max_acc = acc
@@ -86,12 +93,12 @@ methods_kwargs = {
 
 chosen_columns = ["Alignment", "Gender", "Eye color", "Race", "Hair color",
                   "Publisher", "Skin color", "Height", "Weight",
-                #   'Agility', 'Accelerated Healing', 'Durability', 'Flight',
-                #   'Intelligence', 'Super Strength', 'Energy Blasts', 'Stamina',
-                #   'Super Speed', 'Reflexes', 'Empathy', ]
-                  "Accelerated Healing", "Lantern Power Ring",
-                  "Dimensional Awareness", "Cold Resistance", "Durability",
-                  "Stealth", "Energy Absorption", "Flight", "Danger Sense"]
+                  'Agility', 'Accelerated Healing', 'Durability', 'Flight',
+                  'Intelligence', 'Super Strength', 'Energy Blasts', 'Stamina',
+                  'Super Speed', 'Reflexes', 'Empathy', ]
+                #   "Accelerated Healing", "Lantern Power Ring",
+                #   "Dimensional Awareness", "Cold Resistance", "Durability",
+                #   "Stealth", "Energy Absorption", "Flight", "Danger Sense"]
 
 eye_color_dic = {
     'bown': "brown", 
@@ -117,49 +124,63 @@ skin_dic = {
 }
 
 race_dic = {
-    'Alpha': 'No idea',
-    'Amazon': 'Human',
-    'Asgardian': 'Human',
-    'Atlantean': 'Human',
-    'Bizarro': 'No idea',
-    'Clone': 'Android',
-    'Cosmic Entity': 'God',
+    'Alpha': 'Mutant', #change in mutant
+    'Amazon': 'Semihuman', #1 semi hmns
+    'Asgardian': 'God', #New cat
+    'Atlantean': 'Semihuman', #New cat
+    'Bizarro': 'Semihuman', #1 semi hmns
+    'Clone': 'Semihuman', #just one
+    'Cosmic Entity': 'God', #no good
     'Cyborg': 'Android',
-    'Dathomirian Zabrak': 'No idea',
-    'Demi-God': 'God',
-    'Demon': 'Bad',
-    'Eternal': 'God',
-    'Flora Colossus': 'God',
+    'Dathomirian Zabrak': 'Alien', #alien? 1
+    'Demi-God': 'God', 
+    'Demon': 'Demon', #let it
+    'Eternal': 'God', #God? 1
+    'Flora Colossus': 'Alien', #alien? 1
     'God / Eternal': 'God',
     'Gorilla': 'Animal',
-    'Gungan': 'No idea',
-    'Human / Altered': 'Human',
-    'Human / Clone': 'Human',
-    'Human / Cosmic': 'Human',
-    'Human / Radiation': 'Human',
-    'Human-Kree': 'Human-Kree',
-    'Human-Vuldarian': 'Human',
-    'Icthyo Sapien': 'No idea',
-    'Inhuman' : 'Bad',
-    'Korugaran': 'No idea',
-    'Kryptonian': 'Human',
-    'Luphomoid': 'No idea',
-    'Metahuman': 'Human',
-    'Mutant': 'Human',
+    'Gungan': 'Alien', #Alien? 1
+    'Human / Altered': 'Semihuman', #1 semi hmns
+    'Human / Clone': 'Semihuman', #1 semi hmns
+    'Human / Cosmic': 'Semihuman', #1 semi hmns
+    'Human / Radiation': 'Radioactive', #let it
+    'Human-Kree': 'Semihuman', # semi hmns?
+    'Human-Vuldarian': 'Semihuman', #1 semi hmns
+    'Icthyo Sapien': 'Semihuman', #1 semi hmns
+    'Inhuman' : 'Alien', #Alien?
+    'Korugaran': 'Alien', #Alien?
+    'Kryptonian': 'Alien', #Alien
+    'Luphomoid': 'Semihuman', #1 semi hmns
+    'Metahuman': 'Mutant', #mutant
+    'Mutant': 'Mutant', #let it
     'New God': 'God',
-    'Neyaphem': 'No idea',
-    'Rodian': 'Human',
-    'Spartoi': 'No idea',
-    'Symbiote': 'No idea',
-    'Talokite': 'No idea',
-    'Tamaranean': 'No idea',
-    'Ungaran': 'No idea',
-    'Vampire': 'Bad',
-    'Yautja': 'No idea',
-    "Yoda's species": 'No idea',
-    'Zen-Whoberian': 'No idea',
-    'Zombie': 'Bad'
-}
+    'Neyaphem': 'Demon', #Demon
+    'Rodian': 'Alien', #alien
+    'Spartoi': 'Alien', #alien
+    'Symbiote': 'Alien', #alien
+    'Talokite': 'Alien', #alien
+    'Tamaranean': 'Alien', #alien
+    'Ungaran': 'Alien', #alien
+    'Vampire': 'Semihuman', #semihmn
+    'Yautja': 'Alien', #alien
+    "Yoda's species": 'Alien', #alien
+    'Zen-Whoberian': 'Alien', #alien
+    'Zombie': 'Semihuman' #Semihmns
+    }
+
+publ_dic = {
+    'SyFy': 'other',
+    'Star Trek': 'other',
+    'Wildstorm' : 'other',
+    'Shueisha' : 'other',
+    'ABC Studios' : 'other',
+    'IDW Publishing' : 'other',
+    'Team Epic TV' : 'other',
+    'Rebellion' : 'other',
+    'HarperCollins' : 'other',
+    'Icon Comics' : 'other',
+    'J. K. Rowling' : 'other'
+    }
 
 # FUNCTIONS TO CLEAN DATA
 
@@ -193,8 +214,10 @@ def clean_data(data, **kwargs):
     data['Gender'].fillna(generate_distribution(data['Gender']), inplace=True)
     data.loc[data["Height"] < 0, 'Height'] = np.nan
     data["Height"].fillna(generate_distribution(data["Height"]), inplace=True)
+    # data['Height'] = outliers(data, 'Height', kwargs['max_height'], kwargs['min_height'])
     data.loc[data["Weight"] < 0, 'Weight'] = np.nan
     data["Weight"].fillna(generate_distribution(data['Weight']), inplace=True)
+    # data['Weight'] = outliers(data, 'Weight', kwargs['max_weight'], kwargs['min_weight'])
     data.loc[:, 'Eye color'] = data["Eye color"].map(kwargs['eyes_map'])
     data.loc[:, 'Eye color'] = data.loc[:, 'Eye color'] + '_eye'
     data = transform_categorical(data, 'Eye color', kwargs['categorical_handler'])
@@ -203,6 +226,8 @@ def clean_data(data, **kwargs):
     data = transform_categorical(data, 'Hair color', kwargs['categorical_handler'])
     data.loc[:, 'Race'] = data['Race'].map(kwargs['races_map'])
     data = transform_categorical(data, 'Race', kwargs['categorical_handler'])
+    data.loc[:, 'Publisher'] = data['Publisher'].map(kwargs['publisher_map'])
+    data.loc[:, 'Publisher'] = data.loc[:, 'Publisher'] + 'publish'
     data = transform_categorical(data, 'Publisher', kwargs['categorical_handler'])
     data.loc[:, 'Skin color'] = data['Skin color'].map(kwargs['skins_map'])
     data.loc[:, 'Skin color'] = data.loc[:, 'Skin color'] + '_skin'
@@ -222,6 +247,12 @@ parameters = {
     'hairs_map': hair_color_dic,
     'races_map': race_dic,
     'skins_map': skin_dic,
+    'publisher_map': publ_dic,
+    'n_groups': 10,
+    'max_height': 300,
+    'min_height': 100,
+    'max_weight': 600,
+    'min_weight': 0,
 }
 
 # RUNNER
