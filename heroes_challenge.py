@@ -15,16 +15,20 @@ from sklearn.linear_model import LogisticRegression
 def prepare_data(data, test_size):
     y = data["Alignment"]
     X = data.drop(columns=['Alignment'])
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
-    X_train_scaled = StandardScaler().fit_transform(X_train)
-    X_test_scaled = StandardScaler().fit_transform(X_test)
-    return X_train_scaled, X_test_scaled, y_train, y_test
+    X_train_scaled = StandardScaler().fit_transform(X)
+    return X_train_scaled, y
 
 def compute_accuracy(method, method_kwargs, X_train, X_test, y_train, y_test):
     method = method(**method_kwargs)
     method.fit(X_train, y_train) 
     yhat = method.predict(X_test)
     return metrics.accuracy_score(y_test,yhat)
+
+def predict_values(method, method_kwargs, X_train, y_train, data):
+    method = method(**method_kwargs)
+    method.fit(X_train, y_train)
+    yhat = method.predict(data)
+    return yhat
 
 def acc_cross_validate(method, data, n_groups):
     return cross_validate(method, data.drop(columns=['Alignment']),
@@ -38,41 +42,27 @@ def run(**kwargs):
     test_data = pd.read_csv('test.csv')[kwargs['columns'][1:]] #Dropping 'Alignment' column.
     cleaned_data = clean_data(data, **kwargs)
     cleaned_test_data = clean_data(test_data, **kwargs)
-    X_train, X_test, y_train, y_test = prepare_data(cleaned_data, kwargs['test_size'])
-    max_acc = 0.0
-    for name, method in kwargs['methods'].items():
-        method_kwargs = kwargs['methods_kwargs'][name]
-        if 'random_state' in method_kwargs:
-            random_iterator = np.arange(0, kwargs['n_iters'], 1)
-        else:
-            random_iterator = [None]
-        N = len(random_iterator)
-        acc = 0.0
-        for random_seed in random_iterator:
-            methods_kwargs.update({'random_state': random_seed})
-            acc += np.mean(acc_cross_validate(method(**method_kwargs), cleaned_data, kwargs['n_groups'])) / N
-        print('The accuracy for {} is {}.'.format(name, acc))
-        if acc > max_acc:
-            max_acc = acc
-            best_model = name
-    print('')
-    print('RESULT:')
-    print('The {} is the model with best accuracy, acc = {}.'.format(best_model, max_acc))
+    X_train, y_train = prepare_data(cleaned_data, kwargs['test_size'])
+    y_predicted = predict_values(kwargs['methods']['RandomForest'], kwargs['methods_kwargs']['RandomForest'], X_train,
+                                y_train, StandardScaler().fit_transform(cleaned_test_data))
+    print(y_predicted)
+    np.savetxt('predicted_values.csv', y_predicted, delimiter=',', fmt='%s')
+    print('hiho')
 
 # METHODS
 
 methods = {
-    'SVC with C = 10': svm.SVC,
-    'SVC with C = 100': svm.SVC,
-    'SVC with C = 1000': svm.SVC,
-    'GradientBoosting': ensemble.GradientBoostingClassifier,
-    'DecisionTree': tree.DecisionTreeClassifier,
-    'KNeighbors with n = 2': neighbors.KNeighborsClassifier,
-    'NNeighbors with n = 7': neighbors.KNeighborsClassifier,
-    'Gaussian Naive-Bayes': GaussianNB,
-    'LinearSVC': LinearSVC,
+    # 'SVC with C = 10': svm.SVC,
+    # 'SVC with C = 100': svm.SVC,
+    # 'SVC with C = 1000': svm.SVC,
+    # 'GradientBoosting': ensemble.GradientBoostingClassifier,
+    # 'DecisionTree': tree.DecisionTreeClassifier,
+    # 'KNeighbors with n = 2': neighbors.KNeighborsClassifier,
+    # 'NNeighbors with n = 7': neighbors.KNeighborsClassifier,
+    # 'Gaussian Naive-Bayes': GaussianNB,
+    # 'LinearSVC': LinearSVC,
     'RandomForest': RandomForestClassifier,
-    'LogisticRegression': LogisticRegression,
+    # 'LogisticRegression': LogisticRegression,
 }
 
 methods_kwargs = {
@@ -240,9 +230,9 @@ parameters = {
     'methods': methods,
     'methods_kwargs': methods_kwargs,
     'columns': chosen_columns,
-    'test_size': 0.2,
-    'n_iters': 100, 
-    'categorical_handler': 'dummies',
+    'test_size': 0,
+    'n_iters': 1, 
+    'categorical_handler': 'hashing',
     'eyes_map': eye_color_dic,
     'hairs_map': hair_color_dic,
     'races_map': race_dic,
